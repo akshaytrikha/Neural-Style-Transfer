@@ -1,97 +1,60 @@
 // Import dependencies
-import React, { useRef, useState, useEffect } from "react";
-import * as tf from "@tensorflow/tfjs";
-// 1. TODO - Import required model here
-// e.g. import * as tfmodel from "@tensorflow-models/tfmodel";
-import Webcam from "react-webcam";
+import React, { useRef, useState, useEffect } from 'react';
+import * as tf from '@tensorflow/tfjs';
+import {loadGraphModel} from '@tensorflow/tfjs-converter';
+import contentImageSource from './images/chai.jpg';
+import styleImageSource from './images/starry_night.jpg';
 import "./App.css";
-// 2. TODO - Import drawing utility here
-// e.g. import { drawRect } from "./utilities";
 
-function App() {
-  const webcamRef = useRef(null);
-  const canvasRef = useRef(null);
+tf.ENV.set('WEBGL_PACK', false);  // This needs to be done otherwise things run very slow v1.0.4
+
+export default function App() {
+
+  var [predictionModel, setPredictionModel] = useState(null);
+  var [transferModel, setTransferModel] = useState(null);
 
   // Main function
   const runCoco = async () => {
     // 3. TODO - Load network 
     // e.g. const net = await cocossd.load();
     
-    //  Loop and detect hands
-    setInterval(() => {
-      detect(net);
-    }, 10);
+    // //  Loop and detect hands
+    // setInterval(() => {
+    //   // detect(net);
+    //   // transfer(prediction_model)
+    // }, 10);
+
+    console.log("rohan is fat");
   };
 
-  const detect = async (net) => {
-    // Check data is available
-    if (
-      typeof webcamRef.current !== "undefined" &&
-      webcamRef.current !== null &&
-      webcamRef.current.video.readyState === 4
-    ) {
-      // Get Video Properties
-      const video = webcamRef.current.video;
-      const videoWidth = webcamRef.current.video.videoWidth;
-      const videoHeight = webcamRef.current.video.videoHeight;
+  const loadModels = async () => {
+    predictionModel = setPredictionModel(await tf.loadGraphModel('http://127.0.0.1:8080/style-prediction/model.json'));
+    // const prediction_model = await tf.loadLayersModel('https://storage.googleapis.com/tfjs-models/tfjs/sentiment_cnn_v1/model.json');
+    console.log("prediction model loaded");
 
-      // Set video width
-      webcamRef.current.video.width = videoWidth;
-      webcamRef.current.video.height = videoHeight;
+    transferModel = setTransferModel(await tf.loadGraphModel('http://127.0.0.1:8080/style-transfer/model.json'));
+    console.log("transfer model loaded");
+  }
 
-      // Set canvas height and width
-      canvasRef.current.width = videoWidth;
-      canvasRef.current.height = videoHeight;
-
-      // 4. TODO - Make Detections
-      // e.g. const obj = await net.detect(video);
-
-      // Draw mesh
-      const ctx = canvasRef.current.getContext("2d");
-
-      // 5. TODO - Update drawing utility
-      // drawSomething(obj, ctx)  
-    }
-  };
-
-  useEffect(()=>{runCoco()},[]);
+  // React hook to 
+  useEffect(() => {
+    loadModels();
+  }, []);
 
   return (
     <div className="App">
       <header className="App-header">
-        <Webcam
-          ref={webcamRef}
-          muted={true} 
-          style={{
-            position: "absolute",
-            marginLeft: "auto",
-            marginRight: "auto",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            zindex: 9,
-            width: 640,
-            height: 480,
-          }}
-        />
-
-        <canvas
-          ref={canvasRef}
-          style={{
-            position: "absolute",
-            marginLeft: "auto",
-            marginRight: "auto",
-            left: 0,
-            right: 0,
-            textAlign: "center",
-            zindex: 8,
-            width: 640,
-            height: 480,
-          }}
-        />
+        <h1>Neural Style Transfer</h1>
+        <div className="inline-block" style={{background: "", textAlignVertical: "center"}}>
+          <img src={contentImageSource} width="300px" style={{padding: "30px"}}></img>
+          <h1 style={{display: "inline-block"}}>+</h1>
+          <img src={styleImageSource} width="300px" style={{padding: "30px"}}></img>
+          <h1 style={{display: "inline-block"}}>=</h1>
+          <img src={contentImageSource} width="300px" style={{padding: "30px"}}></img>
+        </div>
       </header>
     </div>
   );
 }
 
-export default App;
+// export default App;
