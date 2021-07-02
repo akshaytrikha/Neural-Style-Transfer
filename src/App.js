@@ -1,7 +1,6 @@
 // Import dependencies
 import React, { useRef, useState, useEffect } from 'react';
 import * as tf from '@tensorflow/tfjs';
-import {loadGraphModel} from '@tensorflow/tfjs-converter';
 import contentImageSource from './images/chai.jpg';
 import styleImageSource from './images/starry_night.jpg';
 import "./App.css";
@@ -10,8 +9,9 @@ tf.ENV.set('WEBGL_PACK', false);  // This needs to be done otherwise things run 
 
 export default function App() {
 
-  var [predictionModel, setPredictionModel] = useState(null);
-  var [transferModel, setTransferModel] = useState(null);
+  var predictionModel = null;
+  var transferModel = null;
+  var stylizedImage = null;
 
   // Main function
   const runCoco = async () => {
@@ -23,29 +23,60 @@ export default function App() {
     //   // detect(net);
     //   // transfer(prediction_model)
     // }, 10);
-
-    console.log("rohan is fat");
   };
 
   const loadModels = async () => {
-    predictionModel = setPredictionModel(await tf.loadGraphModel('http://127.0.0.1:8080/style-prediction/model.json'));
+    predictionModel = await tf.loadGraphModel('http://127.0.0.1:8080/style-prediction/model.json');
     // const prediction_model = await tf.loadLayersModel('https://storage.googleapis.com/tfjs-models/tfjs/sentiment_cnn_v1/model.json');
     console.log("prediction model loaded");
 
-    transferModel = setTransferModel(await tf.loadGraphModel('http://127.0.0.1:8080/style-transfer/model.json'));
+
+    transferModel = await tf.loadGraphModel('http://127.0.0.1:8080/style-transfer/model.json');
     console.log("transfer model loaded");
   }
 
+  const predict = async () => {
+    // First wait for models to load
+    await loadModels();
+
+    // Generate style representation
+    await tf.nextFrame();
+    let bottleneck = await tf.tidy(() => {
+      const styleImage = new Image(300, 700);
+      styleImage.src = styleImageSource;
+      const styleImageTensor = tf.browser.fromPixels(styleImage).toFloat().div(tf.scalar(255)).expandDims();
+
+      // return this.prediction_model.predict(tf.browser.fromPixels(this.styleImage).toFloat().div(tf.scalar(255)).expandDims());
+      return predictionModel.predict(styleImageTensor);
+    });
+
+    // Use style representation to generate stylized tensor
+    await tf.nextFrame();
+    const stylized = await tf.tidy(() => {
+      const contentImage = new Image(300,700);
+      contentImage.src = contentImageSource;
+      const contentImageTensor = tf.browser.fromPixels(contentImage).toFloat().div(tf.scalar(255)).expandDims();
+
+      return transferModel.predict([contentImageTensor, bottleneck]).squeeze();
+    });
+
+    // stylizedImage = await tf.browser.toPixels(stylized);
+
+    // console.log(stylizedImage instanceof HTMLCanvasElement);
+  };
+
   // React hook to 
   useEffect(() => {
-    loadModels();
+    tf.ready().then(() => {
+      predict();
+    });
   }, []);
 
   return (
     <div className="App">
       <header className="App-header">
         <h1>Neural Style Transfer</h1>
-        <div className="inline-block" style={{background: "", textAlignVertical: "center"}}>
+        <div className="inline-block" style={{background: "blue", textAlignVertical: "center"}}>
           <img src={contentImageSource} width="300px" style={{padding: "30px"}}></img>
           <h1 style={{display: "inline-block"}}>+</h1>
           <img src={styleImageSource} width="300px" style={{padding: "30px"}}></img>
@@ -56,5 +87,3 @@ export default function App() {
     </div>
   );
 }
-
-// export default App;
