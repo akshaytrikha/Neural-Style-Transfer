@@ -1,8 +1,9 @@
 // Import dependencies
 import React, { useRef, useState, useEffect } from 'react';
 import * as tf from '@tensorflow/tfjs';
+import MaterialUIImage from 'material-ui-image';
 import contentImageSource from './images/chai.jpg';
-import styleImageSource from './images/starry_night.jpg';
+import styleImageSource from './images/guernica.jpg';
 import "./App.css";
 
 tf.ENV.set('WEBGL_PACK', false);  // This needs to be done otherwise things run very slow v1.0.4
@@ -35,6 +36,7 @@ export default function App() {
     console.log("transfer model loaded");
   }
 
+  // Main function
   const predict = async () => {
     // First wait for models to load
     await loadModels();
@@ -42,7 +44,7 @@ export default function App() {
     // Generate style representation
     await tf.nextFrame();
     let bottleneck = await tf.tidy(() => {
-      const styleImage = new Image(300, 700);
+      const styleImage = new Image(300,300);
       styleImage.src = styleImageSource;
       const styleImageTensor = tf.browser.fromPixels(styleImage).toFloat().div(tf.scalar(255)).expandDims();
 
@@ -53,14 +55,14 @@ export default function App() {
     // Use style representation to generate stylized tensor
     await tf.nextFrame();
     const stylized = await tf.tidy(() => {
-      const contentImage = new Image(300,700);
+      const contentImage = new Image(300,300);
       contentImage.src = contentImageSource;
       const contentImageTensor = tf.browser.fromPixels(contentImage).toFloat().div(tf.scalar(255)).expandDims();
 
       return transferModel.predict([contentImageTensor, bottleneck]).squeeze();
     });
 
-    // stylizedImage = await tf.browser.toPixels(stylized);
+    await tf.browser.toPixels(stylized, document.getElementById("stylized-canvas"));
 
     // console.log(stylizedImage instanceof HTMLCanvasElement);
   };
@@ -76,12 +78,21 @@ export default function App() {
     <div className="App">
       <header className="App-header">
         <h1>Neural Style Transfer</h1>
-        <div className="inline-block" style={{background: "blue", textAlignVertical: "center"}}>
-          <img src={contentImageSource} width="300px" style={{padding: "30px"}}></img>
-          <h1 style={{display: "inline-block"}}>+</h1>
-          <img src={styleImageSource} width="300px" style={{padding: "30px"}}></img>
-          <h1 style={{display: "inline-block"}}>=</h1>
-          <img src={contentImageSource} width="300px" style={{padding: "30px"}}></img>
+        <div style={{display: "flex", flexDirection: "row"}}>
+          <div style={{padding: "30px"}}>
+            <MaterialUIImage src={contentImageSource} style={{width: "300px"}} animationDuration={1500} cover={true}/>
+          </div>
+          <div style={{padding: "30px"}}>
+            <MaterialUIImage src={styleImageSource} style={{width: "300px"}} animationDuration={1500} cover={true}/>
+          </div>
+          <div style={{padding: "30px"}}>
+            {/* TODO wrap in <Image> */}
+            <canvas id={"stylized-canvas"} width="300px" height="300px" style={{cover: "true", backgroundColor: "blue"}}></canvas>
+          </div>
+          {/* <h1 style={{display: "inline-block"}}>+</h1> */}
+          {/* <img src={styleImageSource} width="300px" height="undefined" style={{padding: "30px", objectFit: "cover"}}></img> */}
+          {/* <h1 style={{display: "inline-block"}}>=</h1> */}
+          {/* <img src={contentImageSource} width="300px" style={{padding: "30px"}}></img> */}
         </div>
       </header>
     </div>
