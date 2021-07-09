@@ -13,6 +13,10 @@ export default function App() {
   const webcamRef = useRef(null);
   var screenshot = null;
   var bottleneck = null;
+  // var uploadedFile = useState("");
+  const [uploadedFile, setUploadedFile] = useState(undefined);
+  const [loading, setLoading] = useState(true);
+  // const [selectedFile, setSelectedFile] = useState(null);
   // const [screenshotSrc, setScreenshotSrc] = useState(null);
 
   // TODO: use state hooks
@@ -33,6 +37,20 @@ export default function App() {
     console.log("style image uploaded");
   }
 
+  // On file select (from the pop up)
+  const onFileChange = event => {
+    console.log(event.target.files[0])
+    // Check if user actually selected a file
+    if (event.target.files[0] !== undefined) {
+      setUploadedFile(URL.createObjectURL(event.target.files[0]));
+    }
+    
+  };
+
+  const displayStyleImage = () => {
+    console.log("rohan is fat");
+  }
+
   // const init = (model) => {
   //   const dummy = tf.zeros([1, 10, 10, 3], 'int32');
   //   return model.executeAsync( {[INPUT_TENSOR]: dummy}, OUTPUT_TENSOR ).then(function(result){
@@ -44,11 +62,26 @@ export default function App() {
   const capture = async () => {
     screenshot = webcamRef.current.getScreenshot();
   };
+  
+  // Learn the style of a given image
+  const generateStyleRepresentation = async () => {
+    await tf.nextFrame();
+    bottleneck = await tf.tidy(() => {
+      const styleImage = new Image(300,300);
+      styleImage.src = styleImageSource;
+      const styleImageTensor = tf.browser.fromPixels(styleImage).toFloat().div(tf.scalar(255)).expandDims();
+
+      return predictionModel.predict(styleImageTensor);
+    });
+
+    // const warmupResult = transferModel.predict([tf.zeros([1,300,300,3]), bottleneck]);
+    // warmupResult.dataSync(); // we don't care about the result
+    // warmupResult.dispose();
+  }
 
   // Generate and display stylized image
-  const displayStylizedImage = async (curBottleneck) => {
+  const generateStylizedImage = async (curBottleneck) => {
     // Use style representation to generate stylized tensor
-
     await tf.nextFrame();
     if (screenshot != null) {
       const contentImage = new Image(300,300);
@@ -78,20 +111,26 @@ export default function App() {
 
     // Generate style representation
     var t0 = performance.now();
-    await tf.nextFrame();
-    bottleneck = await tf.tidy(() => {
-      const styleImage = new Image(300,300);
-      styleImage.src = styleImageSource;
-      const styleImageTensor = tf.browser.fromPixels(styleImage).toFloat().div(tf.scalar(255)).expandDims();
-
-      return predictionModel.predict(styleImageTensor);
-    });
+    bottleneck = generateStyleRepresentation();
     var t1 = performance.now();
     console.log("Generated style representation in " + (t1 - t0)/1000 + " seconds.");
 
-    const warmupResult = transferModel.predict([tf.zeros([1,300,300,3]), bottleneck]);
-    warmupResult.dataSync(); // we don't care about the result
-    warmupResult.dispose();
+    // // Generate style representation
+    // var t0 = performance.now();
+    // await tf.nextFrame();
+    // bottleneck = await tf.tidy(() => {
+    //   const styleImage = new Image(300,300);
+    //   styleImage.src = styleImageSource;
+    //   const styleImageTensor = tf.browser.fromPixels(styleImage).toFloat().div(tf.scalar(255)).expandDims();
+
+    //   return predictionModel.predict(styleImageTensor);
+    // });
+    // var t1 = performance.now();
+    // console.log("Generated style representation in " + (t1 - t0)/1000 + " seconds.");
+
+    // const warmupResult = transferModel.predict([tf.zeros([1,300,300,3]), bottleneck]);
+    // warmupResult.dataSync(); // we don't care about the result
+    // warmupResult.dispose();
 
     setInterval(() => {
       // wait for webcam to load on screen
@@ -100,10 +139,10 @@ export default function App() {
         capture();
         
         tf.ready().then(() => {
-          displayStylizedImage(bottleneck);
+          generateStylizedImage(bottleneck);
         })
       }
-    }, 50);
+    }, 300);
   };
 
   // React hook to run models
@@ -137,14 +176,26 @@ export default function App() {
               }}
             />
           </div>
-          <div style={{padding: "30px", flexDirection: "column"}}>
-            <MaterialUIImage src={styleImageSource} style={{width: "300px"}} animationDuration={1500} cover={true}/>
-            <button onClick={uploadStyleImage}>Upload Style Image</button>
+          <div style={{padding: "30px", textAlign: "center", flexDirection: "column"}}>
+            {/* <MaterialUIImage src={styleImageSource} style={{width: "300px"}} animationDuration={1500} cover={true}/> */}
+            {/* <img src={uploadedFile} onError={(e)=>{e.target.onerror = null; e.target.src=styleImageSource}} style={{width: "300px"}}/> */}
+            {/* <button onClick={uploadStyleImage}>Upload Style Image</button> */}
+            
+            {/* {uploadedFile !== undefined && (
+              <img src={styleImageSource}/>
+            )} */}
+            <MaterialUIImage src={uploadedFile != undefined ? uploadedFile : styleImageSource} style={{width: "300px"}} cover={true}/>
+            <input
+              type="file"
+              accept="image/*"
+              // value={uploadedFile}
+              onChange={onFileChange}
+            />
           </div>
           <div style={{padding: "30px"}}>
             {/* TODO wrap in <Image> */}
             {screenshot && (
-            <img src={screenshot}/>
+              <img src={screenshot}/>
             )}
             <canvas id={"stylized-canvas"} width="300px" height="300px" style={{cover: "true", backgroundColor: "black"}}></canvas>
           </div>
