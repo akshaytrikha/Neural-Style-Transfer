@@ -3,8 +3,9 @@ import React, { useRef, useState, useEffect } from 'react';
 import * as tf from '@tensorflow/tfjs';
 import MaterialUIImage from 'material-ui-image';
 import Webcam from "react-webcam";
-import contentImageSource from './images/chai.jpg';
-import styleImageSource from './images/guernica.jpg';
+import Chai from './images/chai.jpg';
+import Guernica from './images/guernica.jpg';
+import StarryNight from './images/starry_night.jpg';
 import "./App.css";
 
 tf.ENV.set('WEBGL_PACK', false);  // This needs to be done otherwise things run very slow v1.0.4
@@ -13,15 +14,12 @@ export default function App() {
   const webcamRef = useRef(null);
   var screenshot = null;
   var bottleneck = null;
-  // var uploadedFile = useState("");
-  const [uploadedFile, setUploadedFile] = useState(undefined);
-  const [loading, setLoading] = useState(true);
-  // const [selectedFile, setSelectedFile] = useState(null);
-  // const [screenshotSrc, setScreenshotSrc] = useState(null);
 
   // TODO: use state hooks
   var predictionModel = null;
   var transferModel = null;
+  var pause = false;
+  var styleImageSource = Guernica;
 
   // Fetch models from a backend
   const fetchModels = async () => {
@@ -32,32 +30,39 @@ export default function App() {
     console.log("Models loaded in " + (t1 - t0)/1000 + " seconds.");
   }
 
-  // Upload style image
-  const uploadStyleImage = () => {
-    console.log("style image uploaded");
+  // // Upload style image
+  // const uploadStyleImage = event => {
+  //   pause = true; console.log("pause", pause);
+  //   // URL.createObjectURL(event.target.files[0])
+  //   if (event.target.files[0] !== undefined) {
+  //     console.log("uploaded an image");
+  //   }
+  //   pause = false; console.log("pause", pause);
+  // }
+
+  // Pause model while user uploads an image
+  const pauseModel  = () => {
+    // setPause(value => true);  // pause screenshot capture & prediction model
+    pause = true;  // pause screenshot capture & prediction model
+    console.log("pause", pause);
   }
 
   // On file select (from the pop up)
-  const onFileChange = event => {
-    console.log(event.target.files[0])
+  const uploadStyleImage = event => {
     // Check if user actually selected a file
     if (event.target.files[0] !== undefined) {
-      setUploadedFile(URL.createObjectURL(event.target.files[0]));
+      // styleImageSource = URL.createObjectURL(event.target.files[0]);
+      // styleImageSource = Chai;
+      document.getElementById("style-image-display").src = URL.createObjectURL(event.target.files[0]);;
+      // generateStyleRepresentation(URL.createObjectURL(event.target.files[0]));
+      generateStyleRepresentation(Guernica);
+    } else {
+      console.log("uploaded file was undefined")
     }
-    
-  };
 
-  const displayStyleImage = () => {
-    console.log("rohan is fat");
+    pause = false;  // continue screenshot capture & prediction model
+    console.log("pause", pause);
   }
-
-  // const init = (model) => {
-  //   const dummy = tf.zeros([1, 10, 10, 3], 'int32');
-  //   return model.executeAsync( {[INPUT_TENSOR]: dummy}, OUTPUT_TENSOR ).then(function(result){
-  //     dummy.dispose();
-  //     return result;
-  //   });
-  // }
 
   const capture = async () => {
     screenshot = webcamRef.current.getScreenshot();
@@ -81,6 +86,7 @@ export default function App() {
 
   // Generate and display stylized image
   const generateStylizedImage = async (curBottleneck) => {
+    var t0 = performance.now();
     // Use style representation to generate stylized tensor
     await tf.nextFrame();
     if (screenshot != null) {
@@ -98,10 +104,11 @@ export default function App() {
       });
 
       if (stylized !== null) {
-        console.log("here")
         await tf.browser.toPixels(stylized, document.getElementById('stylized-canvas'));
       }
     }
+    var t1 = performance.now();
+    console.log("Generated stylized image in " + (t1 - t0)/1000 + " seconds.");
   }
 
   // Main function
@@ -115,34 +122,19 @@ export default function App() {
     var t1 = performance.now();
     console.log("Generated style representation in " + (t1 - t0)/1000 + " seconds.");
 
-    // // Generate style representation
-    // var t0 = performance.now();
-    // await tf.nextFrame();
-    // bottleneck = await tf.tidy(() => {
-    //   const styleImage = new Image(300,300);
-    //   styleImage.src = styleImageSource;
-    //   const styleImageTensor = tf.browser.fromPixels(styleImage).toFloat().div(tf.scalar(255)).expandDims();
-
-    //   return predictionModel.predict(styleImageTensor);
-    // });
-    // var t1 = performance.now();
-    // console.log("Generated style representation in " + (t1 - t0)/1000 + " seconds.");
-
-    // const warmupResult = transferModel.predict([tf.zeros([1,300,300,3]), bottleneck]);
-    // warmupResult.dataSync(); // we don't care about the result
-    // warmupResult.dispose();
-
     setInterval(() => {
       // wait for webcam to load on screen
       if (webcamRef != null) {
-        // Loop and take and transfer snapshots of webcam input at intervals of __x__ ms
-        capture();
-        
-        tf.ready().then(() => {
-          generateStylizedImage(bottleneck);
-        })
+        if (!pause) {
+          // Loop and take and transfer snapshots of webcam input at intervals of __x__ ms
+          capture();
+          
+          tf.ready().then(() => {
+            generateStylizedImage(bottleneck);
+          })
+        }
       }
-    }, 300);
+    }, 1500);
   };
 
   // React hook to run models
@@ -158,8 +150,6 @@ export default function App() {
         <h1>Neural Style Transfer</h1>
         <div style={{display: "flex", flexDirection: "row"}}>
           <div style={{padding: "30px"}}>
-            {/* <MaterialUIImage src={contentImageSource} style={{width: "300px"}} animationDuration={1500} cover={true}/> */}
-            {/* <MaterialUIImage src={screenshot} style={{width: "300px"}} animationDuration={1500} cover={true}/> */}
             <Webcam
               ref={webcamRef}
               audio={false}
@@ -177,19 +167,12 @@ export default function App() {
             />
           </div>
           <div style={{padding: "30px", textAlign: "center", flexDirection: "column"}}>
-            {/* <MaterialUIImage src={styleImageSource} style={{width: "300px"}} animationDuration={1500} cover={true}/> */}
-            {/* <img src={uploadedFile} onError={(e)=>{e.target.onerror = null; e.target.src=styleImageSource}} style={{width: "300px"}}/> */}
-            {/* <button onClick={uploadStyleImage}>Upload Style Image</button> */}
-            
-            {/* {uploadedFile !== undefined && (
-              <img src={styleImageSource}/>
-            )} */}
-            <MaterialUIImage src={uploadedFile != undefined ? uploadedFile : styleImageSource} style={{width: "300px"}} cover={true}/>
+            <MaterialUIImage id="style-image-display" src={styleImageSource} style={{width: "300px"}} animationDuration={1500} cover={true}/>
             <input
               type="file"
               accept="image/*"
-              // value={uploadedFile}
-              onChange={onFileChange}
+              onClick={pauseModel}
+              onChange={uploadStyleImage}
             />
           </div>
           <div style={{padding: "30px"}}>
