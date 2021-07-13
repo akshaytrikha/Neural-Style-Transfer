@@ -18,7 +18,6 @@ export default function App() {
   // TODO: use state hooks
   var predictionModel = null;
   var transferModel = null;
-  var pause = false;
   var styleImageSource = Guernica;
 
   // Fetch models from a backend
@@ -30,26 +29,9 @@ export default function App() {
     console.log("Models loaded in " + (t1 - t0)/1000 + " seconds.");
   }
 
-  // // Upload style image
-  // const uploadStyleImage = event => {
-  //   pause = true; console.log("pause", pause);
-  //   // URL.createObjectURL(event.target.files[0])
-  //   if (event.target.files[0] !== undefined) {
-  //     console.log("uploaded an image");
-  //   }
-  //   pause = false; console.log("pause", pause);
-  // }
-
-  // Pause model while user uploads an image
-  const pauseModel  = () => {
-    // setPause(value => true);  // pause screenshot capture & prediction model
-    pause = true;  // pause screenshot capture & prediction model
-    console.log("pause", pause);
-  }
-
   // On file select (from the pop up)
   const uploadStyleImage = event => {
-    // Check if user actually selected a file
+    // Check if user actually selected a file, TODO: does this actually work?
     if (event.target.files[0] !== undefined) {
       // styleImageSource = URL.createObjectURL(event.target.files[0]);
       // styleImageSource = Chai;
@@ -59,9 +41,6 @@ export default function App() {
     } else {
       console.log("uploaded file was undefined")
     }
-
-    pause = false;  // continue screenshot capture & prediction model
-    console.log("pause", pause);
   }
 
   const capture = async () => {
@@ -70,6 +49,7 @@ export default function App() {
   
   // Learn the style of a given image
   const generateStyleRepresentation = async () => {
+    console.log("document is active element", document.activeElement);
     await tf.nextFrame();
     bottleneck = await tf.tidy(() => {
       const styleImage = new Image(300,300);
@@ -90,10 +70,9 @@ export default function App() {
     // Use style representation to generate stylized tensor
     await tf.nextFrame();
     if (screenshot != null) {
-      const contentImage = new Image(300,300);
+      const contentImage = new Image(300,225);
       await (contentImage.src = screenshot);
       const stylized = await tf.tidy(() => {
-
         // wait for contentImage Image object to fully read screenshot from memory
         if (contentImage.complete && contentImage.naturalHeight !== 0) {
           const contentImageTensor = tf.browser.fromPixels(contentImage).toFloat().div(tf.scalar(255)).expandDims();
@@ -123,16 +102,15 @@ export default function App() {
     console.log("Generated style representation in " + (t1 - t0)/1000 + " seconds.");
 
     setInterval(() => {
+      console.log(document.hasFocus())
       // wait for webcam to load on screen
-      if (webcamRef != null) {
-        if (!pause) {
-          // Loop and take and transfer snapshots of webcam input at intervals of __x__ ms
-          capture();
-          
-          tf.ready().then(() => {
-            generateStylizedImage(bottleneck);
-          })
-        }
+      if (webcamRef != null && document.hasFocus()) {
+        // Loop and take and transfer snapshots of webcam input at intervals of __x__ ms
+        capture();
+        
+        tf.ready().then(() => {
+          generateStylizedImage(bottleneck);
+        })
       }
     }, 1500);
   };
@@ -169,9 +147,10 @@ export default function App() {
           <div style={{padding: "30px", textAlign: "center", flexDirection: "column"}}>
             <MaterialUIImage id="style-image-display" src={styleImageSource} style={{width: "300px"}} animationDuration={1500} cover={true}/>
             <input
+              id="upload-file-input"
               type="file"
               accept="image/*"
-              onClick={pauseModel}
+              // onClick={pauseModel}
               onChange={uploadStyleImage}
             />
           </div>
@@ -180,7 +159,7 @@ export default function App() {
             {screenshot && (
               <img src={screenshot}/>
             )}
-            <canvas id={"stylized-canvas"} width="300px" height="300px" style={{cover: "true", backgroundColor: "black"}}></canvas>
+            <canvas id={"stylized-canvas"} width="300px" height="225px" style={{cover: "true", backgroundColor: "black"}}></canvas>
           </div>
           {/* <h1 style={{display: "inline-block"}}>+</h1> */}
           {/* <img src={styleImageSource} width="300px" height="undefined" style={{padding: "30px", objectFit: "cover"}}></img> */}
