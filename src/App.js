@@ -1,5 +1,4 @@
-// Import dependencies
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import * as tf from '@tensorflow/tfjs';
 import MaterialUIImage from 'material-ui-image';
 import Webcam from "react-webcam";
@@ -13,13 +12,12 @@ tf.ENV.set('WEBGL_PACK', false);  // This needs to be done otherwise things run 
 export default function App() {
   const webcamRef = useRef(null);
   var screenshot = null;
-  var bottleneck = null;
+  var styleRepresentation = null;
 
   // TODO: use state hooks
   var predictionModel = null;
   var transferModel = null;
   var styleImage = null;
-  var styleImageReady = false;
   var styleImageSource = Chai;
 
   // Fetch models from a backend
@@ -31,60 +29,47 @@ export default function App() {
     console.log("Models loaded in " + (t1 - t0)/1000 + " seconds.");
   }
 
+  // Initializes a style image and generates a style representation based off it
   const initStyleImage = async () => {
-    styleImage = new Image(300,300); // TODO: what if you just pass in an Image object as param
+    styleImage = new Image(300,300);
     styleImage.addEventListener("load", () => {
-      console.log("style image loaded")
-    
+      console.log("Style image loaded");  // Code once style image has been loaded
       var t0 = performance.now();
       generateStyleRepresentation();
       var t1 = performance.now();
       console.log("Generated style representation in " + (t1 - t0) + " milliseconds.");
-
-      styleImageReady = true;
     })
-    styleImage.src = styleImageSource
-    // await (styleImage.src = styleImageSource);
-    // console.log("style image ready", styleImageReady)
-    // await (styleImage.complete && styleImage.naturalHeight !== 0);
-    // console.log("dimensions ready", styleImage.complete && styleImage.naturalHeight !== 0)
-    // document.getElementById("style-image-display").src = styleImageSource;
+    styleImage.src = styleImageSource  // Safely set styleImage.src
   }
 
   // On file select (from the pop up)
   const uploadStyleImage = async event => {
-    styleImageReady = false; 
-    console.log("style image ready", styleImageReady)
-    // Check if user actually selected a file, TODO: does this actually work?
+    // Check if user actually selected a file to upload
     if (event.target.files[0] !== undefined) {
-      // styleImageSource = URL.createObjectURL(event.target.files[0]);
+      // For generateStyleRepresentation()
       styleImageSource = URL.createObjectURL(event.target.files[0]);
+      // For displaying uploaded image
       document.getElementById("style-image-display").src = URL.createObjectURL(event.target.files[0]);
+      // Initialize uploaded style image
       await initStyleImage();
-      
-      // document.getElementById("style-image-display").src = URL.createObjectURL(event.target.files[0]);
-
-    } else {
-      console.log("uploaded file was undefined")
     }
   }
 
-  const capture = async () => {
+  // Capture a screenshot from webcam
+  const capture = () => {
     screenshot = webcamRef.current.getScreenshot();
   };
   
   // Learn the style of a given image
   const generateStyleRepresentation = async () => {
     await tf.nextFrame();
-    bottleneck = await tf.tidy(() => {
-      // wait for styleImage Image object to fully read style image
-      // if (styleImage.complete && styleImage.naturalHeight !== 0) {
+    styleRepresentation = await tf.tidy(() => {
       const styleImageTensor = tf.browser.fromPixels(styleImage).toFloat().div(tf.scalar(255)).expandDims();
       predictionModel.predict(styleImageTensor);
       return predictionModel.predict(styleImageTensor);
     });
 
-    // const warmupResult = transferModel.predict([tf.zeros([1,300,300,3]), bottleneck]);
+    // const warmupResult = transferModel.predict([tf.zeros([1,300,300,3]), styleRepresentation]);
     // warmupResult.dataSync(); // we don't care about the result
     // warmupResult.dispose();
   }
@@ -101,12 +86,13 @@ export default function App() {
         // wait for contentImage Image object to fully read screenshot from memory
         if (contentImage.complete && contentImage.naturalHeight !== 0) {
           const contentImageTensor = tf.browser.fromPixels(contentImage).toFloat().div(tf.scalar(255)).expandDims();
-          return transferModel.predict([contentImageTensor, bottleneck]).squeeze();
+          return transferModel.predict([contentImageTensor, styleRepresentation]).squeeze();
         } else {
           return null
         }  
       });
 
+      // if stylized === null, the canvas doesn't get updated with a stylized image
       if (stylized !== null) {
         await tf.browser.toPixels(stylized, document.getElementById('stylized-canvas'));
       }
@@ -119,21 +105,14 @@ export default function App() {
   const predict = async () => {
     // First wait for models to load
     await fetchModels();
-    await initStyleImage();
-
-    // // Generate style representation
-    // var t0 = performance.now();
-    // generateStyleRepresentation();
-    // var t1 = performance.now();
-    // console.log("Generated style representation in " + (t1 - t0) + " milliseconds.");
+    await initStyleImage();  // also calls generateStyleRepresentation();
 
     setInterval(() => {
-      console.log("set interval style image ready", styleImageReady)
       // wait for webcam to load on screen
-      if (webcamRef != null && styleImageReady && document.hasFocus()) {
-        // Loop and take and transfer snapshots of webcam input at intervals of __x__ ms
+      if (webcamRef != null && document.hasFocus()) {
+        // Loop and take and transfer screenshots of webcam input at intervals of 700 ms
         capture();
-        
+        // wait for tf to be ready then continously generate stylized images of screenshots
         tf.ready().then(() => {
           generateStylizedImage();
         })
@@ -141,12 +120,12 @@ export default function App() {
     }, 700);
   };
 
-  // React hook to run models
+  // React hook to run main function
   useEffect(() => {
     tf.ready().then(() => {
       predict();
     });
-  }, []);
+  });
 
   return (
     <div className="App">
@@ -164,8 +143,6 @@ export default function App() {
                 margin: "0",
                 textAlign: "center",
                 zindex: 9,
-                // width: 640,
-                // height: 480,
                 width: 300,
                 height: 225
               }}
@@ -177,15 +154,11 @@ export default function App() {
               id="upload-file-input"
               type="file"
               accept="image/*"
-              // onClick={pauseModel}
               onChange={uploadStyleImage}
             />
           </div>
           <div style={{padding: "30px"}}>
             {/* TODO wrap in <Image> */}
-            {screenshot && (
-              <img src={screenshot}/>
-            )}
             <canvas id={"stylized-canvas"} width="300px" height="225px" style={{cover: "true", backgroundColor: "black"}}></canvas>
           </div>
           {/* <h1 style={{display: "inline-block"}}>+</h1> */}
