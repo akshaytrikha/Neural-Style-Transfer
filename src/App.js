@@ -18,7 +18,9 @@ export default function App() {
   // TODO: use state hooks
   var predictionModel = null;
   var transferModel = null;
-  var styleImageSource = Guernica;
+  var styleImage = null;
+  var styleImageReady = false;
+  var styleImageSource = Chai;
 
   // Fetch models from a backend
   const fetchModels = async () => {
@@ -29,17 +31,39 @@ export default function App() {
     console.log("Models loaded in " + (t1 - t0)/1000 + " seconds.");
   }
 
+  const initStyleImage = async () => {
+    styleImage = new Image(300,300); // TODO: what if you just pass in an Image object as param
+    styleImage.addEventListener("load", () => {
+      console.log("style image loaded")
+    
+      var t0 = performance.now();
+      generateStyleRepresentation();
+      var t1 = performance.now();
+      console.log("Generated style representation in " + (t1 - t0) + " milliseconds.");
+
+      styleImageReady = true;
+    })
+    styleImage.src = styleImageSource
+    // await (styleImage.src = styleImageSource);
+    // console.log("style image ready", styleImageReady)
+    // await (styleImage.complete && styleImage.naturalHeight !== 0);
+    // console.log("dimensions ready", styleImage.complete && styleImage.naturalHeight !== 0)
+    // document.getElementById("style-image-display").src = styleImageSource;
+  }
+
   // On file select (from the pop up)
-  const uploadStyleImage = event => {
+  const uploadStyleImage = async event => {
+    styleImageReady = false; 
+    console.log("style image ready", styleImageReady)
     // Check if user actually selected a file, TODO: does this actually work?
     if (event.target.files[0] !== undefined) {
       // styleImageSource = URL.createObjectURL(event.target.files[0]);
-      // styleImageSource = Chai;
-      document.getElementById("style-image-display").src = URL.createObjectURL(event.target.files[0]);;
-      // generateStyleRepresentation(URL.createObjectURL(event.target.files[0]));
-      tf.ready().then(() => {
-        generateStylizedImage();
-      })
+      styleImageSource = URL.createObjectURL(event.target.files[0]);
+      document.getElementById("style-image-display").src = URL.createObjectURL(event.target.files[0]);
+      await initStyleImage();
+      
+      // document.getElementById("style-image-display").src = URL.createObjectURL(event.target.files[0]);
+
     } else {
       console.log("uploaded file was undefined")
     }
@@ -53,17 +77,16 @@ export default function App() {
   const generateStyleRepresentation = async () => {
     await tf.nextFrame();
     bottleneck = await tf.tidy(() => {
-      const styleImage = new Image(300,300);
-      styleImage.src = styleImageSource;
+      // wait for styleImage Image object to fully read style image
+      // if (styleImage.complete && styleImage.naturalHeight !== 0) {
       const styleImageTensor = tf.browser.fromPixels(styleImage).toFloat().div(tf.scalar(255)).expandDims();
-
+      predictionModel.predict(styleImageTensor);
       return predictionModel.predict(styleImageTensor);
     });
 
-    // warm up the model because first prediction takes 3 to 4 times as long
-    const warmupResult = predictionModel.predict([tf.zeros([1,300,300,3])]);
-    warmupResult.dataSync(); // we don't care about the result
-    warmupResult.dispose();
+    // const warmupResult = transferModel.predict([tf.zeros([1,300,300,3]), bottleneck]);
+    // warmupResult.dataSync(); // we don't care about the result
+    // warmupResult.dispose();
   }
 
   // Generate and display stylized image
@@ -96,16 +119,18 @@ export default function App() {
   const predict = async () => {
     // First wait for models to load
     await fetchModels();
+    await initStyleImage();
 
-    // Generate style representation
-    var t0 = performance.now();
-    generateStyleRepresentation();
-    var t1 = performance.now();
-    console.log("Generated style representation in " + (t1 - t0)/1000 + " seconds.");
+    // // Generate style representation
+    // var t0 = performance.now();
+    // generateStyleRepresentation();
+    // var t1 = performance.now();
+    // console.log("Generated style representation in " + (t1 - t0) + " milliseconds.");
 
     setInterval(() => {
+      console.log("set interval style image ready", styleImageReady)
       // wait for webcam to load on screen
-      if (webcamRef != null && document.hasFocus()) {
+      if (webcamRef != null && styleImageReady && document.hasFocus()) {
         // Loop and take and transfer snapshots of webcam input at intervals of __x__ ms
         capture();
         
@@ -113,7 +138,7 @@ export default function App() {
           generateStylizedImage();
         })
       }
-    }, 1500);
+    }, 700);
   };
 
   // React hook to run models
