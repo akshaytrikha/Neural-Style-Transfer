@@ -11,14 +11,13 @@ tf.ENV.set('WEBGL_PACK', false);  // This needs to be done otherwise things run 
 
 export default function App() {
   const webcamRef = useRef(null);
+  // TODO: use state hooks
   var screenshot = null;
   var styleRepresentation = null;
-
-  // TODO: use state hooks
   var predictionModel = null;
   var transferModel = null;
   var styleImage = null;
-  var styleImageSource = Chai;
+  var styleImageSource = Guernica;
 
   // Fetch models from a backend
   const fetchModels = async () => {
@@ -65,13 +64,8 @@ export default function App() {
     await tf.nextFrame();
     styleRepresentation = await tf.tidy(() => {
       const styleImageTensor = tf.browser.fromPixels(styleImage).toFloat().div(tf.scalar(255)).expandDims();
-      predictionModel.predict(styleImageTensor);
-      return predictionModel.predict(styleImageTensor);
+      return predictionModel.predict(styleImageTensor);  // For cleanliness
     });
-
-    // const warmupResult = transferModel.predict([tf.zeros([1,300,300,3]), styleRepresentation]);
-    // warmupResult.dataSync(); // we don't care about the result
-    // warmupResult.dispose();
   }
 
   // Generate and display stylized image
@@ -81,12 +75,12 @@ export default function App() {
     await tf.nextFrame();
     if (screenshot != null) {
       const contentImage = new Image(300,225);
-      await (contentImage.src = screenshot);
+      await (contentImage.src = screenshot);  // // wait for contentImage Image object to fully read screenshot from memory
       const stylized = await tf.tidy(() => {
-        // wait for contentImage Image object to fully read screenshot from memory
+        // Double check contentImage has loaded
         if (contentImage.complete && contentImage.naturalHeight !== 0) {
           const contentImageTensor = tf.browser.fromPixels(contentImage).toFloat().div(tf.scalar(255)).expandDims();
-          return transferModel.predict([contentImageTensor, styleRepresentation]).squeeze();
+          return transferModel.predict([contentImageTensor, styleRepresentation]).squeeze();  // For cleanliness
         } else {
           return null
         }  
@@ -103,7 +97,7 @@ export default function App() {
 
   // Main function
   const predict = async () => {
-    // First wait for models to load
+    // First wait for models and style image to load
     await fetchModels();
     await initStyleImage();  // also calls generateStyleRepresentation();
 
