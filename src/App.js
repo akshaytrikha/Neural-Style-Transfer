@@ -37,7 +37,9 @@ export default function App() {
       // styleImageSource = Chai;
       document.getElementById("style-image-display").src = URL.createObjectURL(event.target.files[0]);;
       // generateStyleRepresentation(URL.createObjectURL(event.target.files[0]));
-      generateStyleRepresentation(Guernica);
+      tf.ready().then(() => {
+        generateStylizedImage();
+      })
     } else {
       console.log("uploaded file was undefined")
     }
@@ -49,7 +51,6 @@ export default function App() {
   
   // Learn the style of a given image
   const generateStyleRepresentation = async () => {
-    console.log("document is active element", document.activeElement);
     await tf.nextFrame();
     bottleneck = await tf.tidy(() => {
       const styleImage = new Image(300,300);
@@ -59,13 +60,14 @@ export default function App() {
       return predictionModel.predict(styleImageTensor);
     });
 
-    // const warmupResult = transferModel.predict([tf.zeros([1,300,300,3]), bottleneck]);
-    // warmupResult.dataSync(); // we don't care about the result
-    // warmupResult.dispose();
+    // warm up the model because first prediction takes 3 to 4 times as long
+    const warmupResult = predictionModel.predict([tf.zeros([1,300,300,3])]);
+    warmupResult.dataSync(); // we don't care about the result
+    warmupResult.dispose();
   }
 
   // Generate and display stylized image
-  const generateStylizedImage = async (curBottleneck) => {
+  const generateStylizedImage = async () => {
     var t0 = performance.now();
     // Use style representation to generate stylized tensor
     await tf.nextFrame();
@@ -76,7 +78,7 @@ export default function App() {
         // wait for contentImage Image object to fully read screenshot from memory
         if (contentImage.complete && contentImage.naturalHeight !== 0) {
           const contentImageTensor = tf.browser.fromPixels(contentImage).toFloat().div(tf.scalar(255)).expandDims();
-          return transferModel.predict([contentImageTensor, curBottleneck]).squeeze();
+          return transferModel.predict([contentImageTensor, bottleneck]).squeeze();
         } else {
           return null
         }  
@@ -97,19 +99,18 @@ export default function App() {
 
     // Generate style representation
     var t0 = performance.now();
-    bottleneck = generateStyleRepresentation();
+    generateStyleRepresentation();
     var t1 = performance.now();
     console.log("Generated style representation in " + (t1 - t0)/1000 + " seconds.");
 
     setInterval(() => {
-      console.log(document.hasFocus())
       // wait for webcam to load on screen
       if (webcamRef != null && document.hasFocus()) {
         // Loop and take and transfer snapshots of webcam input at intervals of __x__ ms
         capture();
         
         tf.ready().then(() => {
-          generateStylizedImage(bottleneck);
+          generateStylizedImage();
         })
       }
     }, 1500);
@@ -132,6 +133,7 @@ export default function App() {
               ref={webcamRef}
               audio={false}
               screenshotFormat="image/jpg"
+              screenshotQuality={0}
               videoConstraints={{facingMode: "user"}}
               style={{
                 margin: "0",
