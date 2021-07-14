@@ -1,11 +1,12 @@
 import React, { useRef, useEffect } from 'react';
+import "./App.css";
 import * as tf from '@tensorflow/tfjs';
-import MaterialUIImage from 'material-ui-image';
 import Webcam from "react-webcam";
 import Chai from './images/chai.jpg';
 import Guernica from './images/guernica.jpg';
 import StarryNight from './images/starry_night.jpg';
-import "./App.css";
+import ShuffleIcon from './icons/shuffle.png';
+import UploadIcon from './icons/upload.png';
 
 tf.ENV.set('WEBGL_PACK', false);  // This needs to be done otherwise things run very slow v1.0.4
 
@@ -31,13 +32,12 @@ export default function App() {
   const initStyleImage = async () => {
     styleImage = new Image(300,300);
     styleImage.addEventListener("load", () => {
-      console.log("Style image loaded");  // Code once style image has been loaded
-      const t0 = performance.now();
+      console.log("Style image loaded");  // Executed once style image has been loaded
       generateStyleRepresentation();
-      const t1 = performance.now();
-      console.log("Generated style representation in " + (t1 - t0) + " milliseconds.");
+      document.getElementById("style-image-display").style.opacity = "1";  // Back to full opacity once loaded
     })
     styleImage.src = styleImageSource  // Safely set styleImage.src
+    document.getElementById("style-image-display").style.opacity = "0.2";  // Dim opacity to alert user of image loading
   }
 
   // On file select (from the pop up)
@@ -60,11 +60,14 @@ export default function App() {
   
   // Learn the style of a given image
   const generateStyleRepresentation = async () => {
+    const t0 = performance.now();
     await tf.nextFrame();
     styleRepresentation = await tf.tidy(() => {
       const styleImageTensor = tf.browser.fromPixels(styleImage).toFloat().div(tf.scalar(255)).expandDims();
       return predictionModel.predict(styleImageTensor);  // For cleanliness
     });
+    const t1 = performance.now();
+    console.log("Generated style representation in " + (t1 - t0) + " milliseconds.");
   }
 
   // Generate and display stylized image
@@ -89,7 +92,6 @@ export default function App() {
         await tf.browser.toPixels(stylized, document.getElementById('stylized-canvas'));
       }
     }
-    const t1 = performance.now();
   }
 
   // Main function
@@ -130,40 +132,41 @@ export default function App() {
     <div className="App">
       <header className="App-header">
         <h1>Neural Style Transfer</h1>
-        <div style={{display: "flex", flexDirection: "row"}}>
-          <div style={{padding: "30px"}}>
+        <div style={{display: "table-cell", verticalAlign: "middle", minHeight: "400px"}}>
+          <div style={{padding: "30px", marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
             <Webcam
               ref={webcamRef}
               audio={false}
               screenshotFormat="image/jpg"
               screenshotQuality={0}
               videoConstraints={{facingMode: "user"}}
-              style={{
-                margin: "0",
-                textAlign: "center",
-                zindex: 9,
-                width: 300,
-                height: 225
-              }}
+              style={{textAlign: "center", zindex: 9, width: 300, height: 225, borderRadius: "30px"}}
             />
           </div>
-          <div style={{padding: "30px", textAlign: "center", flexDirection: "column"}}>
-            <MaterialUIImage id="style-image-display" src={styleImageSource} style={{width: "300px"}} animationDuration={1500} cover={true}/>
-            <input
-              id="upload-file-input"
-              type="file"
-              accept="image/*"
-              onChange={uploadStyleImage}
-            />
+          <div style={{marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
+            <h1 style={{}}>+</h1>
           </div>
-          <div style={{padding: "30px"}}>
+          <div style={{padding: "30px", textAlign: "center", display: "inline-block", verticalAlign: "middle"}}>
+            <img id="style-image-display" src={styleImageSource} style={{width: "300px", height: "300px", objectFit: "cover", borderRadius: "30px"}} alt="display style"/>
+            <label htmlFor="upload-file-input">
+              <h5 style={{fontSize: "12px"}}>Choose images to upload</h5>
+              <input
+                id="upload-file-input"
+                // style={{width: 100}}
+                hidden={true}
+                type="file"
+                accept="image/*"
+                onChange={uploadStyleImage}
+              />
+            </label>
+          </div>
+          <div style={{marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
+            <h1 style={{}}>=</h1>
+          </div>
+          <div style={{padding: "30px", display: "inline-block", verticalAlign: "middle"}}>
             {/* TODO wrap in <Image> */}
-            <canvas id={"stylized-canvas"} width="300px" height="225px" style={{cover: "true", backgroundColor: "black"}}></canvas>
+            <canvas id={"stylized-canvas"} width="300px" height="225px" style={{marginTop: "-50px", cover: "true", backgroundColor: "black", borderRadius: "30px"}}></canvas>
           </div>
-          {/* <h1 style={{display: "inline-block"}}>+</h1> */}
-          {/* <img src={styleImageSource} width="300px" height="undefined" style={{padding: "30px", objectFit: "cover"}}></img> */}
-          {/* <h1 style={{display: "inline-block"}}>=</h1> */}
-          {/* <img src={contentImageSource} width="300px" style={{padding: "30px"}}></img> */}
         </div>
       </header>
     </div>

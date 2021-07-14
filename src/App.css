@@ -1,6 +1,6 @@
-.App {
+/* .App {
   text-align: center;
-}
+} */
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
@@ -10,4 +10,15 @@
   justify-content: center;
   font-size: calc(10px + 2vmin);
   color: white;
+}
+
+.Upload-loading {
+  opacity: 0.5;
+}
+
+
+label {
+  /* background-color:#282c34; */
+  background-color: black;
+  border-radius: "2px";
 }
