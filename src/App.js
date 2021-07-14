@@ -11,8 +11,7 @@ tf.ENV.set('WEBGL_PACK', false);  // This needs to be done otherwise things run 
 
 export default function App() {
   const webcamRef = useRef(null);
-  // TODO: use state hooks
-  var screenshot = null;
+  var screenshot = null; // TODO: use state hooks
   var styleRepresentation = null;
   var predictionModel = null;
   var transferModel = null;
@@ -21,10 +20,10 @@ export default function App() {
 
   // Fetch models from a backend
   const fetchModels = async () => {
-    var t0 = performance.now();
-    predictionModel = await tf.loadGraphModel('http://127.0.0.1:8080/style-prediction/model.json');
-    transferModel = await tf.loadGraphModel('http://127.0.0.1:8080/style-transfer/model.json');
-    var t1 = performance.now();
+    const t0 = performance.now();
+    predictionModel = await tf.loadGraphModel(process.env.PUBLIC_URL + '/models//style-prediction/model.json');
+    transferModel = await tf.loadGraphModel(process.env.PUBLIC_URL + '/models//style-transfer/model.json');
+    const t1 = performance.now();
     console.log("Models loaded in " + (t1 - t0)/1000 + " seconds.");
   }
 
@@ -33,9 +32,9 @@ export default function App() {
     styleImage = new Image(300,300);
     styleImage.addEventListener("load", () => {
       console.log("Style image loaded");  // Code once style image has been loaded
-      var t0 = performance.now();
+      const t0 = performance.now();
       generateStyleRepresentation();
-      var t1 = performance.now();
+      const t1 = performance.now();
       console.log("Generated style representation in " + (t1 - t0) + " milliseconds.");
     })
     styleImage.src = styleImageSource  // Safely set styleImage.src
@@ -70,7 +69,6 @@ export default function App() {
 
   // Generate and display stylized image
   const generateStylizedImage = async () => {
-    var t0 = performance.now();
     // Use style representation to generate stylized tensor
     await tf.nextFrame();
     if (screenshot != null) {
@@ -91,8 +89,7 @@ export default function App() {
         await tf.browser.toPixels(stylized, document.getElementById('stylized-canvas'));
       }
     }
-    var t1 = performance.now();
-    console.log("Generated stylized image in " + (t1 - t0)/1000 + " seconds.");
+    const t1 = performance.now();
   }
 
   // Main function
@@ -101,6 +98,8 @@ export default function App() {
     await fetchModels();
     await initStyleImage();  // also calls generateStyleRepresentation();
 
+    var console_i = 0;  // only output generateStylizedImage logs 10 times
+
     setInterval(() => {
       // wait for webcam to load on screen
       if (webcamRef != null && document.hasFocus()) {
@@ -108,10 +107,16 @@ export default function App() {
         capture();
         // wait for tf to be ready then continously generate stylized images of screenshots
         tf.ready().then(() => {
+          const t0 = performance.now();
           generateStylizedImage();
+          const t1 = performance.now();
+          if (console_i <= 10) {
+            console.log("Generated stylized image in " + (t1 - t0) + " milliseconds.");
+          }
+          console_i += 1;
         })
       }
-    }, 700);
+    }, 400);
   };
 
   // React hook to run main function
