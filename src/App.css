@@ -34,7 +34,3 @@ button, label {
   background: none;
   border: none;
 }
-
-label:hover {
-  opacity: 0.5;
-}

@@ -1,11 +1,18 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';  // React Dependencies
 import "./App.css";
 import * as tf from '@tensorflow/tfjs';
 import Webcam from "react-webcam";
-import Chai from './images/chai.jpg';
+import Babur from './images/babur.jpg';  // Image Dependencies
+import MonaLisa from './images/mona-lisa.jpeg';
+import Scream from './images/scream.jpeg';
+import SquaresCircles from './images/squares-concentric-circles.jpg';
 import Guernica from './images/guernica.jpg';
-import StarryNight from './images/starry_night.jpg';
-import ShuffleIcon from './icons/shuffle.png';
+import StarryNight from './images/starry-night.jpeg';
+import Twombly from './images/twombly.jpeg';
+import Bricks from './images/bricks.jpg'
+import Stripes from './images/stripes.jpg'
+import Towers from './images/towers.jpg'
+import ShuffleIcon from './icons/shuffle.png';  // Icon Dependencies
 import UploadIcon from './icons/upload.png';
 
 tf.ENV.set('WEBGL_PACK', false);  // This needs to be done otherwise things run very slow v1.0.4
@@ -17,7 +24,9 @@ export default function App() {
   var predictionModel = null;
   var transferModel = null;
   var styleImage = null;
-  var styleImageSource = Guernica;
+  const styleImages = [Guernica, SquaresCircles, Towers, MonaLisa, Twombly, Bricks, Scream, Stripes, Babur, StarryNight];
+  var shuffle_i = 0;
+  var styleImageSource = styleImages[shuffle_i];
 
   // Fetch models from a backend
   const fetchModels = async () => {
@@ -30,6 +39,7 @@ export default function App() {
 
   // Initializes a style image and generates a style representation based off it
   const initStyleImage = async () => {
+    document.getElementById("style-image-display").src = styleImageSource;  // For displaying uploaded image
     styleImage = new Image(300,300);
     styleImage.addEventListener("load", () => {
       console.log("Style image loaded");  // Executed once style image has been loaded
@@ -46,8 +56,6 @@ export default function App() {
     if (event.target.files[0] !== undefined) {
       // For generateStyleRepresentation()
       styleImageSource = URL.createObjectURL(event.target.files[0]);
-      // For displaying uploaded image
-      document.getElementById("style-image-display").src = URL.createObjectURL(event.target.files[0]);
       // Initialize uploaded style image
       await initStyleImage();
     }
@@ -94,6 +102,19 @@ export default function App() {
     }
   }
 
+  // Shuffle style images from given set
+  const shuffle = async () => {
+    if (shuffle_i < styleImages.length - 1) {
+      shuffle_i += 1;
+    } else {
+      shuffle_i = 0;
+    }
+    
+    styleImageSource = styleImages[shuffle_i];
+    console.log(styleImageSource)
+    await initStyleImage();
+  }
+
   // Main function
   const predict = async () => {
     // First wait for models and style image to load
@@ -123,7 +144,7 @@ export default function App() {
   // React hook to run main function
   useEffect(() => {
     tf.ready().then(() => {
-      // predict();
+      predict();
     });
   });
 
@@ -139,7 +160,7 @@ export default function App() {
               ref={webcamRef}
               audio={false}
               screenshotFormat="image/jpg"
-              screenshotQuality={0}
+              screenshotQuality={1}
               videoConstraints={{facingMode: "user"}}
               style={{textAlign: "center", zindex: 9, width: 300, height: 225, borderRadius: "30px"}}
             />
@@ -163,7 +184,7 @@ export default function App() {
                       onChange={uploadStyleImage}
                     />
                   </label>
-                  <button><img src={ShuffleIcon} width={"50px"}/></button>
+                  <button onClick={shuffle}><img src={ShuffleIcon} width={"50px"}/></button>
                 </figcaption>
               </figure>
           </div>
