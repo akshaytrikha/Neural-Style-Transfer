@@ -101,7 +101,6 @@ export default function App() {
     await initStyleImage();  // also calls generateStyleRepresentation();
 
     var console_i = 0;  // only output generateStylizedImage logs 10 times
-
     setInterval(() => {
       // wait for webcam to load on screen
       if (webcamRef != null && document.hasFocus()) {
@@ -124,15 +123,17 @@ export default function App() {
   // React hook to run main function
   useEffect(() => {
     tf.ready().then(() => {
-      predict();
+      // predict();
     });
   });
 
   return (
     <div className="App">
       <header className="App-header">
+        {/* Title */}
         <h1>Neural Style Transfer</h1>
         <div style={{display: "table-cell", verticalAlign: "middle", minHeight: "400px"}}>
+          {/* First Panel */}
           <div style={{padding: "30px", marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
             <Webcam
               ref={webcamRef}
@@ -143,26 +144,34 @@ export default function App() {
               style={{textAlign: "center", zindex: 9, width: 300, height: 225, borderRadius: "30px"}}
             />
           </div>
+          {/* "+" */}
           <div style={{marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
             <h1 style={{}}>+</h1>
           </div>
+          {/* Middle Panel */}
           <div style={{padding: "30px", textAlign: "center", display: "inline-block", verticalAlign: "middle"}}>
-            <img id="style-image-display" src={styleImageSource} style={{width: "300px", height: "300px", objectFit: "cover", borderRadius: "30px"}} alt="display style"/>
-            <label htmlFor="upload-file-input">
-              <h5 style={{fontSize: "12px"}}>Choose images to upload</h5>
-              <input
-                id="upload-file-input"
-                // style={{width: 100}}
-                hidden={true}
-                type="file"
-                accept="image/*"
-                onChange={uploadStyleImage}
-              />
-            </label>
+            <figure>
+              <img id="style-image-display" src={styleImageSource} style={{width: "300px", height: "300px", objectFit: "cover", borderRadius: "30px"}} alt="display style"/>
+              <figcaption>
+                <label>
+                  <img src={UploadIcon} width={"50px"}/>
+                  <input
+                      id="upload-file-input"
+                      hidden={true}
+                      type="file"
+                      accept="image/*"
+                      onChange={uploadStyleImage}
+                    />
+                  </label>
+                  <button><img src={ShuffleIcon} width={"50px"}/></button>
+                </figcaption>
+              </figure>
           </div>
+          {/* "=" */}
           <div style={{marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
             <h1 style={{}}>=</h1>
           </div>
+          {/* Third Panel */}
           <div style={{padding: "30px", display: "inline-block", verticalAlign: "middle"}}>
             {/* TODO wrap in <Image> */}
             <canvas id={"stylized-canvas"} width="300px" height="225px" style={{marginTop: "-50px", cover: "true", backgroundColor: "black", borderRadius: "30px"}}></canvas>
