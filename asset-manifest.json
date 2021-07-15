@@ -1,14 +1,14 @@
 {
   "files": {
     "main.css": "/Style-Transfer/static/css/main.06dedd13.chunk.css",
-    "main.js": "/Style-Transfer/static/js/main.0e84e8d1.chunk.js",
-    "main.js.map": "/Style-Transfer/static/js/main.0e84e8d1.chunk.js.map",
+    "main.js": "/Style-Transfer/static/js/main.86a83f12.chunk.js",
+    "main.js.map": "/Style-Transfer/static/js/main.86a83f12.chunk.js.map",
     "runtime-main.js": "/Style-Transfer/static/js/runtime-main.69121cae.js",
     "runtime-main.js.map": "/Style-Transfer/static/js/runtime-main.69121cae.js.map",
     "static/js/2.b4727405.chunk.js": "/Style-Transfer/static/js/2.b4727405.chunk.js",
     "static/js/2.b4727405.chunk.js.map": "/Style-Transfer/static/js/2.b4727405.chunk.js.map",
     "index.html": "/Style-Transfer/index.html",
-    "precache-manifest.36f524c320613e6165d84b337f51b566.js": "/Style-Transfer/precache-manifest.36f524c320613e6165d84b337f51b566.js",
+    "precache-manifest.9836447a1ab42bc5da3a87b56178b655.js": "/Style-Transfer/precache-manifest.9836447a1ab42bc5da3a87b56178b655.js",
     "service-worker.js": "/Style-Transfer/service-worker.js",
     "static/css/main.06dedd13.chunk.css.map": "/Style-Transfer/static/css/main.06dedd13.chunk.css.map",
     "static/js/2.b4727405.chunk.js.LICENSE.txt": "/Style-Transfer/static/js/2.b4727405.chunk.js.LICENSE.txt",
@@ -28,6 +28,6 @@
     "static/js/runtime-main.69121cae.js",
     "static/js/2.b4727405.chunk.js",
     "static/css/main.06dedd13.chunk.css",
-    "static/js/main.0e84e8d1.chunk.js"
+    "static/js/main.86a83f12.chunk.js"
   ]
 }
