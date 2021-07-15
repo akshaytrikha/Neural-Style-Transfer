@@ -1,7 +1,8 @@
 import React, { useRef, useEffect } from 'react';  // React Dependencies
 import "./App.css";
 import * as tf from '@tensorflow/tfjs';
-import Webcam from "react-webcam";
+import Webcam from 'react-webcam';
+import {isBrowser, BrowserView, MobileView} from 'react-device-detect';
 import Babur from './images/babur.jpg';  // Image Dependencies
 import MonaLisa from './images/mona-lisa.jpeg';
 import Scream from './images/scream.jpeg';
@@ -16,6 +17,7 @@ import LinkedInIcon from './/icons/linkedin.png';  // Icon Dependencies
 import GitHubIcon from './/icons/github.png';
 import ShuffleIcon from './icons/shuffle.png';  
 import UploadIcon from './icons/upload.png';
+import LoadingIcon from './icons/dots.png';
 
 tf.ENV.set('WEBGL_PACK', false);  // This needs to be done otherwise things run very slow v1.0.4
 
@@ -26,7 +28,8 @@ export default function App() {
   var predictionModel = null;
   var transferModel = null;
   var styleImage = null;
-  const styleImages = [Guernica, SquaresCircles, Towers, MonaLisa, Twombly, Bricks, Scream, Stripes, Babur, StarryNight];
+  const styleImages = [Guernica, SquaresCircles, Towers, MonaLisa, Twombly, 
+                       Bricks, Scream, Stripes, Babur, StarryNight];
   var shuffle_i = 0;
   var styleImageSource = styleImages[shuffle_i];
 
@@ -50,6 +53,13 @@ export default function App() {
     })
     styleImage.src = styleImageSource  // Safely set styleImage.src
     document.getElementById("style-image-display").style.opacity = "0.2";  // Dim opacity to alert user of image loading
+
+    console.log("dots init")
+    const loadingImage = new Image(10,10);
+    await (loadingImage.src = LoadingIcon);
+    const canvas = document.getElementById('stylized-canvas');
+    await canvas.getContext('2d').drawImage(loadingImage, canvas.width / 3 - loadingImage.width / 3, canvas.height / 3 - loadingImage.height / 3);
+    console.log("dots drawn")
   }
 
   // On file select (from the pop up)
@@ -146,71 +156,83 @@ export default function App() {
   // React hook to run main function
   useEffect(() => {
     tf.ready().then(() => {
-      predict();
+      // Check if device is a browser
+      if (isBrowser) {
+        predict();
+      }
+      // initStyleImage();
     });
   });
 
   return (
     <div className="App">
-      <header className="App-header">
-        {/* Title */}
-        <h1>Neural Style Transfer</h1>
-        <div style={{display: "flex", flexDirection: "row"}}>
-          <a href="http://github.com/akshaytrikha/style-transfer" target="_blank" rel="noopener noreferrer">
-            <img src={GitHubIcon} className="Icon GitHub" width="40px" alt={"GitHub link"} />
-          </a>
-          <a href="https://www.linkedin.com/in/akshay-trikha/" target="_blank" rel="noopener noreferrer">
-            <img src={LinkedInIcon} className="Icon LinkedIn" width="40px" alt={"LinkedIn link"} />
-          </a>
-        </div>
-        <div style={{display: "table-cell", verticalAlign: "middle", minHeight: "400px"}}>
-          {/* First Panel */}
-          <div style={{padding: "30px", marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
-            <Webcam
-              ref={webcamRef}
-              audio={false}
-              screenshotFormat="image/jpg"
-              screenshotQuality={1}
-              videoConstraints={{facingMode: "user"}}
-              style={{textAlign: "center", zindex: 9, width: 300, height: 225, borderRadius: "30px"}}
-            />
+      <BrowserView>
+        <header className="App-header">
+          {/* Title */}
+          <h1>Neural Style Transfer</h1>
+          <div style={{display: "flex", flexDirection: "row"}}>
+            <a href="http://github.com/akshaytrikha/style-transfer" target="_blank" rel="noopener noreferrer">
+              <img src={GitHubIcon} className="Icon GitHub" width="40px" alt={"GitHub link"} />
+            </a>
+            <a href="https://www.linkedin.com/in/akshay-trikha/" target="_blank" rel="noopener noreferrer">
+              <img src={LinkedInIcon} className="Icon LinkedIn" width="40px" alt={"LinkedIn link"} />
+            </a>
           </div>
-          {/* "+" */}
-          <div style={{marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
-            <h1>+</h1>
+          <div style={{display: "table-cell", verticalAlign: "middle", minHeight: "400px"}}>
+            {/* First Panel */}
+            <div style={{padding: "30px", marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
+              <Webcam
+                ref={webcamRef}
+                audio={false}
+                screenshotFormat="image/jpg"
+                screenshotQuality={1}
+                videoConstraints={{facingMode: "user"}}
+                style={{textAlign: "center", zindex: 9, width: 300, height: 225, borderRadius: "30px"}}
+              />
+            </div>
+            {/* "+" */}
+            <div style={{marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
+              <h1>+</h1>
+            </div>
+            {/* Middle Panel */}
+            <div style={{padding: "30px", textAlign: "center", display: "inline-block", verticalAlign: "middle"}}>
+              <figure>
+                <img id="style-image-display" src={styleImageSource} style={{width: "300px", height: "300px", objectFit: "cover", borderRadius: "30px"}} alt="display style"/>
+                <figcaption>
+                  {/* Shuffle Button */}
+                  <button className="Icon Shuffle-glow" onClick={shuffle}><img src={ShuffleIcon} width={"40px"} /* style={{boxShadow: "0 0 10px 10px rgba(145, 92, 182, 0.4)", border: "none"}} */ /></button>
+                  {/* Upload Image Button */}
+                  <label className="Icon">
+                    <img src={UploadIcon} width={"40px"} style={{opacity: 0.85}}/>
+                    <input
+                        id="upload-file-input"
+                        hidden={true}
+                        type="file"
+                        accept="image/*"
+                        onChange={uploadStyleImage}
+                      />
+                    </label>
+                  </figcaption>
+                </figure>
+            </div>
+            {/* "=" */}
+            <div style={{marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
+              <h1>=</h1>
+            </div>
+            {/* Third Panel */}
+            <div style={{padding: "30px", display: "inline-block", verticalAlign: "middle"}}>
+              {/* TODO wrap in <Image> */}
+              {/* {canvasOrDiv} */}
+              <canvas id={"stylized-canvas"} width="300px" height="225px" style={{marginTop: "-50px", cover: "true", backgroundColor: "black", borderRadius: "30px"}}></canvas>
+              {/* <script>{canvasLoading()}</script> */}
+            </div>
           </div>
-          {/* Middle Panel */}
-          <div style={{padding: "30px", textAlign: "center", display: "inline-block", verticalAlign: "middle"}}>
-            <figure>
-              <img id="style-image-display" src={styleImageSource} style={{width: "300px", height: "300px", objectFit: "cover", borderRadius: "30px"}} alt="display style"/>
-              <figcaption>
-                {/* Shuffle Button */}
-                <button className="Icon Shuffle-glow" onClick={shuffle}><img src={ShuffleIcon} width={"40px"} /* style={{boxShadow: "0 0 10px 10px rgba(145, 92, 182, 0.4)", border: "none"}} */ /></button>
-                {/* Upload Image Button */}
-                <label className="Icon">
-                  <img src={UploadIcon} width={"40px"} style={{opacity: 0.75}}/>
-                  <input
-                      id="upload-file-input"
-                      hidden={true}
-                      type="file"
-                      accept="image/*"
-                      onChange={uploadStyleImage}
-                    />
-                  </label>
-                </figcaption>
-              </figure>
-          </div>
-          {/* "=" */}
-          <div style={{marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
-            <h1>=</h1>
-          </div>
-          {/* Third Panel */}
-          <div style={{padding: "30px", display: "inline-block", verticalAlign: "middle"}}>
-            {/* TODO wrap in <Image> */}
-            <canvas id={"stylized-canvas"} width="300px" height="225px" style={{marginTop: "-50px", cover: "true", backgroundColor: "black", borderRadius: "30px"}}></canvas>
-          </div>
-        </div>
-      </header>
+        </header>
+      </BrowserView>
+      <MobileView>
+      <h1>Neural Style Transfer</h1>
+      <h3>Please run this app on your desktop.</h3>
+      </MobileView>
     </div>
   );
 }
