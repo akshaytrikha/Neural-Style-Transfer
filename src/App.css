@@ -1,3 +1,24 @@
+h1 {
+  margin-bottom: 0.2em;
+}
+
+figure {
+  margin: 0;
+}
+
+figcaption {
+  margin-top: 12px;
+}
+
+/* TODO: make these # when need to expand to more buttons, labels */
+button {
+  margin-right: 20px;
+}
+
+label {
+  margin-left: 20px;
+}
+
 .App-header {
   background-color: #282c34;
   min-height: 100vh;
@@ -9,28 +30,44 @@
   color: white;
 }
 
-.Upload-loading {
-  opacity: 0.5;
-}
-
-figure {
-  margin: 0;
-}
-
-figcaption {
-  margin-top: 12px;
-}
-
-button {
-  margin-left: 20px;
-}
-
-label {
-  margin-right: 20px;
-}
-
-button, label {
+.Icon {
   cursor: pointer;
   background: none;
   border: none;
+}
+
+.Shuffle-glow {
+  animation-name: glow;
+  animation-duration: 1s;
+  animation-iteration-count: 10;
+}
+
+.GitHub {
+  margin-right: 25px;
+}
+
+.LinkedIn {
+  margin-left: 25px;
+}
+
+.Unselectable {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+@keyframes glow {
+  from {
+    /* box-shadow: 0 0 10px -10px rgba(145, 92, 182, 0.4); */
+    filter: drop-shadow(0 0 -0.5rem rgb(145, 92, 182));
+    transform: rotateZ(360deg);
+  }
+  to {
+    /* box-shadow: 0 0 10px 10px rgba(145, 92, 182, 0.4); */
+    filter: drop-shadow(0 0 0.5rem rgb(145, 92, 182));
+    transform: rotateZ(360deg);
+  }
 }

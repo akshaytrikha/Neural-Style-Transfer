@@ -12,7 +12,9 @@ import Twombly from './images/twombly.jpeg';
 import Bricks from './images/bricks.jpg'
 import Stripes from './images/stripes.jpg'
 import Towers from './images/towers.jpg'
-import ShuffleIcon from './icons/shuffle.png';  // Icon Dependencies
+import LinkedInIcon from './/icons/linkedin.png';  // Icon Dependencies
+import GitHubIcon from './/icons/github.png';
+import ShuffleIcon from './icons/shuffle.png';  
 import UploadIcon from './icons/upload.png';
 
 tf.ENV.set('WEBGL_PACK', false);  // This needs to be done otherwise things run very slow v1.0.4
@@ -153,6 +155,14 @@ export default function App() {
       <header className="App-header">
         {/* Title */}
         <h1>Neural Style Transfer</h1>
+        <div style={{display: "flex", flexDirection: "row"}}>
+          <a href="http://github.com/akshaytrikha/style-transfer" target="_blank" rel="noopener noreferrer">
+            <img src={GitHubIcon} className="Icon GitHub" width="40px" alt={"GitHub link"} />
+          </a>
+          <a href="https://www.linkedin.com/in/akshay-trikha/" target="_blank" rel="noopener noreferrer">
+            <img src={LinkedInIcon} className="Icon LinkedIn" width="40px" alt={"LinkedIn link"} />
+          </a>
+        </div>
         <div style={{display: "table-cell", verticalAlign: "middle", minHeight: "400px"}}>
           {/* First Panel */}
           <div style={{padding: "30px", marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
@@ -167,15 +177,18 @@ export default function App() {
           </div>
           {/* "+" */}
           <div style={{marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
-            <h1 style={{}}>+</h1>
+            <h1>+</h1>
           </div>
           {/* Middle Panel */}
           <div style={{padding: "30px", textAlign: "center", display: "inline-block", verticalAlign: "middle"}}>
             <figure>
               <img id="style-image-display" src={styleImageSource} style={{width: "300px", height: "300px", objectFit: "cover", borderRadius: "30px"}} alt="display style"/>
               <figcaption>
-                <label>
-                  <img src={UploadIcon} width={"50px"}/>
+                {/* Shuffle Button */}
+                <button className="Icon Shuffle-glow" onClick={shuffle}><img src={ShuffleIcon} width={"40px"} /* style={{boxShadow: "0 0 10px 10px rgba(145, 92, 182, 0.4)", border: "none"}} */ /></button>
+                {/* Upload Image Button */}
+                <label className="Icon">
+                  <img src={UploadIcon} width={"40px"} style={{opacity: 0.75}}/>
                   <input
                       id="upload-file-input"
                       hidden={true}
@@ -184,13 +197,12 @@ export default function App() {
                       onChange={uploadStyleImage}
                     />
                   </label>
-                  <button onClick={shuffle}><img src={ShuffleIcon} width={"50px"}/></button>
                 </figcaption>
               </figure>
           </div>
           {/* "=" */}
           <div style={{marginTop: "-50px", display: "inline-block", verticalAlign: "middle"}}>
-            <h1 style={{}}>=</h1>
+            <h1>=</h1>
           </div>
           {/* Third Panel */}
           <div style={{padding: "30px", display: "inline-block", verticalAlign: "middle"}}>
