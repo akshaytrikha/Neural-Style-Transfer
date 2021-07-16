@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react';  // React Dependencies
 import "./App.css";
 import * as tf from '@tensorflow/tfjs';
 import Webcam from 'react-webcam';
-import {isBrowser, BrowserView, MobileView} from 'react-device-detect';
+import { isBrowser, BrowserView, MobileView } from 'react-device-detect';
 import Babur from './images/babur.jpg';  // Image Dependencies
 import MonaLisa from './images/mona-lisa.jpeg';
 import Scream from './images/scream.jpeg';
@@ -42,17 +42,32 @@ export default function App() {
     console.log("Models loaded in " + (t1 - t0)/1000 + " seconds.");
   }
 
+  // Wait for an elem to set url as its src, opacity for dimming center canvas (style-image-display)
+  const loadImage = async (url, elem, opacity) => {  // TODO: async function loadImage(url, elem) {}?
+    if (opacity) {
+      document.getElementById("style-image-display").style.opacity = "0.2";  // Dim opacity to alert user of image loading
+    }
+    return new Promise((resolve, reject) => {
+      if (opacity) {
+        elem.onload = () => {
+          console.log("Style image loaded");  // Executed once style image has been loaded
+          generateStyleRepresentation();
+          document.getElementById("style-image-display").style.opacity = "1";  // Back to full opacity once loaded
+          resolve(elem);
+        }
+      } else {
+        elem.onload = () => resolve(elem);
+      }
+      elem.onerror = reject;
+      elem.src = url;
+    });
+  }
+
   // Initializes a style image and generates a style representation based off it
   const initStyleImage = async () => {
     document.getElementById("style-image-display").src = styleImageSource;  // For displaying uploaded image
     styleImage = new Image(300,300);
-    styleImage.addEventListener("load", () => {
-      console.log("Style image loaded");  // Executed once style image has been loaded
-      generateStyleRepresentation();
-      document.getElementById("style-image-display").style.opacity = "1";  // Back to full opacity once loaded
-    })
-    styleImage.src = styleImageSource  // Safely set styleImage.src
-    document.getElementById("style-image-display").style.opacity = "0.2";  // Dim opacity to alert user of image loading
+    await loadImage(styleImageSource, styleImage, true);  // wait for styleImage Image object to fully read styleImageSource
 
     // Draw dots on canvas to alert user of model loading
     const loadingImage = new Image(10,10);
@@ -93,22 +108,17 @@ export default function App() {
   const generateStylizedImage = async () => {
     // Use style representation to generate stylized tensor
     await tf.nextFrame();
+    // Avoid feeding blank screenshot for model to predict
     if (screenshot != null) {
       const contentImage = new Image(300,225);
-      await (contentImage.src = screenshot);  // // wait for contentImage Image object to fully read screenshot from memory
+      await loadImage(screenshot, contentImage, false);  // wait for contentImage Image object to fully read screenshot from memory
+      // Generated stylized image
       const stylized = await tf.tidy(() => {
-        // Double check contentImage has loaded
-        if (contentImage.complete && contentImage.naturalHeight !== 0) {
           const contentImageTensor = tf.browser.fromPixels(contentImage).toFloat().div(tf.scalar(255)).expandDims();
           return transferModel.predict([contentImageTensor, styleRepresentation]).squeeze();  // For cleanliness
-        } else {
-          return null
-        }
       });
-      // if stylized === null, the canvas doesn't get updated with a stylized image
-      if (stylized !== null) {
-        await tf.browser.toPixels(stylized, document.getElementById('stylized-canvas'));
-      }
+      // Update canvas with new stylized image
+      await tf.browser.toPixels(stylized, document.getElementById('stylized-canvas'));
     }
   }
 
@@ -140,7 +150,7 @@ export default function App() {
           const t0 = performance.now();
           generateStylizedImage();
           const t1 = performance.now();
-          if (console_i <= 10) {
+          if (console_i < 10) {
             console.log("Generated stylized image in " + (t1 - t0) + " milliseconds.");
           }
           console_i += 1;
@@ -196,10 +206,10 @@ export default function App() {
                 <img id="style-image-display" src={styleImageSource} style={{width: "300px", height: "300px", objectFit: "cover", borderRadius: "30px"}} alt="display style"/>
                 <figcaption>
                   {/* Shuffle Button */}
-                  <button className="Icon Shuffle-glow" onClick={shuffle}><img src={ShuffleIcon} width={"40px"} /></button>
+                  <button className="Icon Shuffle-glow" onClick={shuffle}><img src={ShuffleIcon} width={"40px"} alt="Shuffle"/></button>
                   {/* Upload Image Button */}
                   <label className="Icon">
-                    <img src={UploadIcon} width={"40px"} style={{opacity: 0.85}}/>
+                    <img src={UploadIcon} width={"40px"} style={{opacity: 0.85}} alt="Upload Style" />
                     <input
                         id="upload-file-input"
                         hidden={true}
