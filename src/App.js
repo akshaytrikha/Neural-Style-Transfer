@@ -234,7 +234,7 @@ export default function App() {
       </BrowserView>
       {/* Mobile user gets alerted to use desktop */}
       <MobileView>
-      <header className="App">
+      <header className="App App-mobile">
           {/* Title */}
           <h1>Neural Style Transfer</h1>
           <h4>Please run this app on your desktop.</h4>

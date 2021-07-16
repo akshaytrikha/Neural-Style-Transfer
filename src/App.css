@@ -30,6 +30,10 @@ label {
   color: white;
 }
 
+.App-mobile {
+  margin-top: -15%;
+}
+
 .Icon {
   cursor: pointer;
   background: none;
