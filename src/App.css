@@ -1,5 +1,10 @@
 h1 {
-  margin-bottom: 0.2em;
+  margin-bottom: 0.5em;
+}
+
+contact-buttons {
+  display: "flex";
+  direction: "row"
 }
 
 figure {
@@ -38,6 +43,7 @@ label {
   cursor: pointer;
   background: none;
   border: none;
+  width: 40px;
 }
 
 .Shuffle-glow {
